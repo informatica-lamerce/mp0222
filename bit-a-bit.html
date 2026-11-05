@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bit a bit: joc de codificació (M0222)</title>
+<style>
+:root {
+  --bg: #FBF8F8; --surface: #FFFFFF; --surface-2: #F4EDED; --ink: #252122; --muted: #6B6360;
+  --line: #E4DADA; --brand: #980000; --brand-ink: #FFFFFF; --accent: #BE2D2A;
+  --on: #980000; --on-ink: #FFFFFF; --off: #FFFFFF; --off-ink: #8A807E;
+  --ok: #17663A; --ok-bg: #E4F3E9; --bad: #A4231C; --bad-bg: #FBE8E6; --info-bg: #F4EDED; --focus: #BE2D2A;
+  --mono: ui-monospace, "DejaVu Sans Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --sans: Arial, "Liberation Sans", Helvetica, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1B1718; --surface: #252021; --surface-2: #2F292A; --ink: #F3EDED; --muted: #B4AAA9;
+    --line: #453C3D; --brand: #E5736C; --brand-ink: #1B1718; --accent: #F0928C;
+    --on: #B92A23; --on-ink: #FFFFFF; --off: #2A2425; --off-ink: #A1979A;
+    --ok: #86D9A2; --ok-bg: #18301F; --bad: #FF9B92; --bad-bg: #3B1E1C; --info-bg: #2F292A; --focus: #F0928C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1B1718; --surface: #252021; --surface-2: #2F292A; --ink: #F3EDED; --muted: #B4AAA9;
+  --line: #453C3D; --brand: #E5736C; --brand-ink: #1B1718; --accent: #F0928C;
+  --on: #B92A23; --on-ink: #FFFFFF; --off: #2A2425; --off-ink: #A1979A;
+  --ok: #86D9A2; --ok-bg: #18301F; --bad: #FF9B92; --bad-bg: #3B1E1C; --info-bg: #2F292A; --focus: #F0928C;
+  color-scheme: dark;
+}
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 var(--sans); -webkit-text-size-adjust: 100%; }
+#app { max-width: 880px; margin: 0 auto; padding: 22px 18px 48px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+code { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.center { text-align: center; justify-content: center; }
+
+/* ---------- inici */
+.hero h1 { font-size: clamp(3rem, 12vw, 5.2rem); line-height: .9; letter-spacing: -.045em; margin: 6px 0 12px; color: var(--brand); }
+.hero p { font-size: 1.08rem; max-width: 56ch; margin: 0 0 22px; }
+.play { background: var(--surface); border: 2px solid var(--brand); border-radius: 18px; padding: 18px 18px 20px; margin-bottom: 28px; }
+.play h2 { font-size: 1.15rem; margin: 0 0 2px; }
+.play > p { margin: 0 0 14px; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; max-width: 640px; }
+.readout div { border-top: 3px solid var(--brand); padding-top: 6px; }
+.readout span { display: block; font-size: .85rem; color: var(--muted); }
+.readout b { font: 700 clamp(1.5rem, 6vw, 2.3rem)/1.1 var(--mono); }
+.who { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 26px; }
+.who label { font-weight: 700; }
+input[type="text"] { font: inherit; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+  color: var(--ink); min-width: 0; width: min(100%, 340px); }
+input[type="text"]:focus { border-color: var(--brand); outline: none; }
+.sect { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 8px; }
+.sect h2 { font-size: 1.35rem; margin: 0; }
+.missions { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.missions li { border-bottom: 1px solid var(--line); }
+.mrow { width: 100%; display: grid; grid-template-columns: 42px 1fr auto; gap: 4px 14px; align-items: center; text-align: left;
+  background: none; border: 0; padding: 14px 6px; cursor: pointer; border-radius: 10px; }
+.mrow:hover { background: var(--surface-2); }
+.mnum { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--brand); color: var(--brand); display: grid;
+  place-items: center; font-weight: 700; }
+.mtxt b { display: block; font-size: 1.08rem; }
+.mtxt span { display: block; color: var(--muted); font-size: .94rem; }
+.mside { text-align: right; white-space: nowrap; }
+.mside small { display: block; color: var(--muted); font-size: .8rem; }
+.missions li.final { border-bottom: 0; margin-top: 10px; }
+.mrow.final { background: var(--brand); color: var(--brand-ink); padding: 16px 14px; }
+.mrow.final:hover { background: var(--accent); }
+.mrow.final .mnum { border-color: var(--brand-ink); color: var(--brand-ink); }
+.mrow.final .mtxt span, .mrow.final .mside small { color: var(--brand-ink); opacity: .85; }
+.stars { display: inline-flex; gap: 2px; vertical-align: middle; }
+.stars svg { width: 18px; height: 18px; }
+.stars .f { fill: var(--brand); }
+.stars .e { fill: none; stroke: var(--line); stroke-width: 2; }
+.mrow.final .stars .f { fill: var(--brand-ink); }
+.mrow.final .stars .e { stroke: var(--brand-ink); opacity: .55; }
+.foot { margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 18px;
+  justify-content: space-between; align-items: center; font-size: .88rem; color: var(--muted); }
+.linkbtn { background: none; border: 0; padding: 4px 0; color: var(--brand); text-decoration: underline; cursor: pointer; }
+
+/* ---------- cartes */
+.cards { display: grid; gap: 8px; margin: 0; }
+.cards.n8 { grid-template-columns: repeat(8, minmax(0, 1fr)); max-width: 640px; }
+.cards.n5 { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 430px; }
+.cards.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 340px; }
+.slot { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.card { width: 100%; aspect-ratio: 3 / 4; border-radius: 10px; border: 2px solid var(--line); background: var(--off); color: var(--off-ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 2px;
+  transition: background-color .12s, border-color .12s, transform .08s; }
+.card.on { background: var(--on); border-color: var(--on); color: var(--on-ink); }
+.card:not(:disabled):active { transform: scale(.95); }
+.card:disabled { cursor: default; }
+.card .w { font-weight: 700; font-size: clamp(.82rem, 3.4vw, 1.3rem); line-height: 1; }
+.cards.n4 .card .w, .cards.n5 .card .w { font-size: clamp(1.2rem, 5.5vw, 1.8rem); }
+.dots { display: grid; grid-template-columns: repeat(4, 7px); gap: 4px; justify-content: center; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
+.bitlab { font: 700 1.05rem var(--mono); color: var(--muted); }
+.slot .card.on + .bitlab { color: var(--brand); }
+
+/* ---------- partida */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-bottom: 12px; }
+.bar-title { flex: 1 1 220px; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.12rem; }
+.bar-title .mnum { width: 30px; height: 30px; font-size: .9rem; flex: none; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .95rem; color: var(--muted); }
+.stats b { color: var(--ink); }
+.streak.hot b, .streak.hot { color: var(--brand); }
+.progress { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin-bottom: 22px; }
+.progress i { display: block; height: 100%; background: var(--brand); transition: width .3s; }
+.intro { font-size: 1.08rem; margin: 0 0 10px; max-width: 62ch; }
+.q { font-size: 1.25rem; font-weight: 700; margin: 0 0 14px; max-width: 46ch; }
+.target { font: 700 clamp(3.4rem, 15vw, 5.8rem)/1 var(--mono); color: var(--brand); margin: 2px 0 16px; letter-spacing: -.02em; }
+.sum { font: 700 1.15rem var(--mono); margin: 14px 0 4px; color: var(--muted); min-height: 1.5em; }
+.sum.match { color: var(--ok); }
+.binline { margin: 6px 0 0; color: var(--muted); }
+.binline code { font-weight: 700; color: var(--ink); font-size: 1.05rem; letter-spacing: .04em; }
+.timer { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin: 18px 0 4px; max-width: 640px; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--brand); transition: width .2s linear; }
+.tleft { margin: 0; font: 700 .95rem var(--mono); color: var(--muted); }
+.fb { margin: 18px 0 14px; padding: 12px 14px; border-radius: 12px; max-width: 640px; }
+.fb:empty { display: none; }
+.fb.ok { background: var(--ok-bg); color: var(--ok); }
+.fb.bad { background: var(--bad-bg); color: var(--bad); }
+.fb.info { background: var(--info-bg); color: var(--ink); }
+.fb .pts { display: inline-block; margin-left: 4px; font-weight: 700; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.btn { border: 2px solid var(--brand); background: var(--brand); color: var(--brand-ink); padding: 11px 18px; border-radius: 10px;
+  font-weight: 700; cursor: pointer; }
+.btn:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
+.btn.ghost { background: transparent; color: var(--brand); }
+.btn.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--brand); }
+.btn.sm { padding: 7px 12px; font-size: .92rem; }
+.btn:disabled { opacity: .4; cursor: default; }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 480px; margin-top: 16px; }
+.opt { font: 700 clamp(1.3rem, 5vw, 1.7rem) var(--mono); padding: 14px 10px; border-radius: 12px; border: 2px solid var(--line);
+  background: var(--surface); cursor: pointer; }
+.opt:hover:not(:disabled) { border-color: var(--brand); }
+.opt.sel { border-color: var(--brand); background: var(--surface-2); }
+.opt.ok { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+.opt.bad { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
+.opt:disabled { cursor: default; }
+.opt.sm { font-size: 1.15rem; padding: 9px 12px; min-width: 70px; }
+.groups { display: flex; flex-wrap: wrap; gap: 14px 26px; }
+.groups .cards.n4 { width: min(300px, 42vw); }
+.slots { display: flex; gap: 8px; margin: 18px 0 12px; }
+.slotx { width: 54px; height: 62px; border: 2px solid var(--line); border-radius: 10px; display: grid; place-items: center;
+  font: 700 2rem var(--mono); color: var(--brand); background: var(--surface); }
+.slotx.cur { border-color: var(--brand); }
+.keypad { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; max-width: 520px; }
+.key { font: 700 1.15rem var(--mono); padding: 10px 0; border-radius: 9px; border: 2px solid var(--line); background: var(--surface); cursor: pointer; }
+.key:hover:not(:disabled) { border-color: var(--brand); }
+.key.wide { grid-column: span 3; font-family: var(--sans); font-size: .95rem; }
+.key:disabled { opacity: .5; cursor: default; }
+.colors { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; }
+.colors figure { margin: 0; }
+.sw-big { display: block; width: 116px; height: 86px; border-radius: 12px; border: 2px solid var(--line); }
+.sw-big.mine.part { border-style: dashed; }
+.colors figcaption { margin-top: 6px; font-size: .92rem; color: var(--muted); }
+.colors figcaption code { color: var(--ink); font-weight: 700; }
+.crow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ch { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; flex: none; }
+.ch0 { background: #D93025; } .ch1 { background: #1E8E3E; } .ch2 { background: #1A73E8; }
+.pair { font: 700 1.5rem var(--mono); width: 44px; }
+.copts { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-color { display: flex; align-items: center; gap: 14px; margin: 4px 0 6px; }
+.chip-color .sw-big { width: 84px; height: 60px; }
+.chip-color code { font-size: 1.6rem; font-weight: 700; }
+.chip-color mark { background: var(--surface-2); color: var(--brand); border-bottom: 3px solid var(--brand); padding: 0 2px; }
+.bytes { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 16px; }
+.byte { display: flex; flex-direction: column; align-items: center; min-width: 56px; padding: 6px 8px; border: 2px solid var(--line);
+  border-radius: 10px; background: var(--surface); }
+.byte code { font-weight: 700; font-size: 1.25rem; }
+.byte b { font: 700 1.35rem var(--mono); color: var(--brand); min-height: 1.5em; }
+.byte.cur { border-color: var(--brand); }
+.byte.done { background: var(--surface-2); }
+.ascii-wrap { overflow-x: auto; max-width: 100%; padding-bottom: 4px; }
+table.ascii { border-collapse: separate; border-spacing: 3px; }
+table.ascii th { font: 700 .95rem var(--mono); color: var(--muted); padding: 2px 4px; }
+table.ascii th[scope="row"] { padding-right: 6px; }
+.ac { width: 2.15rem; height: 2.15rem; font: 700 1rem var(--mono); border-radius: 7px; border: 1px solid var(--line);
+  background: var(--surface); cursor: pointer; padding: 0; }
+.ac:hover:not(:disabled) { border-color: var(--brand); color: var(--brand); }
+.ac.hint { background: var(--surface-2); border-color: var(--brand); }
+.ac.bad { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+.ac:disabled { cursor: default; opacity: .7; }
+.shake { animation: shake .32s; }
+@keyframes shake { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+
+/* ---------- final */
+.end { max-width: 620px; }
+.end h2 { font-size: 1.5rem; margin: 10px 0 4px; }
+.end .score { font: 700 clamp(2.6rem, 11vw, 4rem)/1 var(--mono); color: var(--brand); margin: 6px 0 10px; }
+.bigstars svg { width: 46px; height: 46px; }
+.cert { max-width: 640px; margin: 10px auto 14px; padding: 28px 24px; text-align: center; background: var(--surface);
+  border: 3px double var(--brand); border-radius: 6px; outline: 1px solid var(--line); outline-offset: 6px; }
+.cert-k { margin: 0; font-weight: 700; color: var(--brand); font-size: 1.1rem; }
+.cert h2 { margin: 4px 0 18px; font-size: 1.5rem; }
+.cert-name { font-size: clamp(1.6rem, 6vw, 2.2rem); font-weight: 700; margin: 0 0 6px; color: var(--brand); }
+.cert-in { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin: 10px 0; font-weight: 700; }
+.cert-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 20px 0; }
+.cert-grid span { display: block; font-size: .85rem; color: var(--muted); }
+.cert-grid b { font: 700 1.4rem var(--mono); }
+@media (max-width: 520px) {
+  #app { padding: 16px 12px 40px; }
+  .cards { gap: 5px; }
+  .card { border-radius: 8px; }
+  .dots { grid-template-columns: repeat(4, 5px); gap: 3px; }
+  .dots i { width: 5px; height: 5px; }
+  .readout { gap: 8px; }
+  .keypad { gap: 4px; }
+  .cert-grid { grid-template-columns: 1fr; }
+  table.ascii { width: 100%; table-layout: fixed; border-spacing: 2px; }
+  table.ascii th { font-size: .72rem; padding: 0; }
+  table.ascii th[scope="row"] { padding-right: 0; }
+  .ac { width: 100%; height: 1.95rem; font-size: .84rem; border-radius: 5px; }
+  .mrow { grid-template-columns: 38px 1fr; }
+  .mside { grid-column: 2; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<main id="app" aria-live="off"></main>
+<script>
+(() => {
+'use strict';
+const app = document.getElementById('app');
+const HEX = '0123456789ABCDEF';
+
+// ---------------------------------------------------------------- dades guardades
+const KEY = 'bitabit-v1';
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+const store = Object.assign({ name: '', best: {}, stars: {} }, load());
+function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* sense desar */ } }
+
+// ---------------------------------------------------------------- utilitats
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const W = n => Array.from({ length: n }, (_, i) => 2 ** (n - 1 - i));
+const bitsOf = (v, ws) => ws.map(w => (v & w) ? 1 : 0);
+const bin = (v, n) => v.toString(2).padStart(n, '0');
+const grp4 = s => s.replace(/(.{4})(?=.)/g, '$1 ');
+const hex2 = v => HEX[v >> 4] + HEX[v & 15];
+const hexVal = ch => HEX.indexOf(ch);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const sumOf = (ws, bits) => ws.reduce((s, w, i) => s + (bits[i] ? w : 0), 0);
+const sumTxt = (ws, bits) => { const on = ws.filter((w, i) => bits[i]); return on.length ? on.join(' + ') : '0'; };
+const popcount = v => bin(v, 1).split('').filter(c => c === '1').length;
+const reverseBits = (v, n) => parseInt(bin(v, n).split('').reverse().join(''), 2);
+const dec = x => String(x).replace('.', ',');
+const LETTERS = 'A = 10, B = 11, C = 12, D = 13, E = 14, F = 15.';
+
+// números que surten a la pràctica i a la teoria: el joc no els fa servir
+const AVOID = [15, 23, 45, 59, 90, 100, 129, 161, 200, 255];
+
+function fresh(make, used) {
+  let v, guard = 0;
+  do { v = make(); } while (used.has(v) && guard++ < 300);
+  used.add(v);
+  return v;
+}
+function opts(correct, cands, k, lo = 0, hi = 255) {
+  const out = [correct];
+  for (const c of shuffle(cands)) {
+    if (out.length >= k) break;
+    if (Number.isInteger(c) && c >= lo && c <= hi && !out.includes(c)) out.push(c);
+  }
+  let guard = 0;
+  while (out.length < k && guard++ < 300) {
+    const c = correct + pick([-16, -10, -8, -2, -1, 1, 2, 8, 10, 16]);
+    if (c >= lo && c <= hi && !out.includes(c)) out.push(c);
+  }
+  return shuffle(out);
+}
+function nibExplain(v) {
+  const b = bin(v, 4);
+  if (v === 0) return '0000 = 0';
+  return `${b} = ${sumTxt([8, 4, 2, 1], bitsOf(v, [8, 4, 2, 1]))} = ${v}` + (v >= 10 ? ` → ${HEX[v]}` : '');
+}
+function pairExplain(p) {
+  const a = hexVal(p[0]), b = hexVal(p[1]);
+  const fa = a >= 10 ? `${p[0]} (${a})` : p[0], fb = b >= 10 ? `${p[1]} (${b})` : p[1];
+  return `${fa} × 16 + ${fb} = ${a * 16 + b}`;
+}
+function letterOf(v) {
+  if (v === 32) return 'espai';
+  if (v > 32 && v < 127) return esc(String.fromCharCode(v));
+  return '—';
+}
+
+// ---------------------------------------------------------------- generadors de rondes
+function genCards(i, used) {
+  const t = fresh(() => (i < 3 ? rnd(3, 15) : rnd(17, 31)), used);
+  return { type: 'set', ws: W(i < 3 ? 4 : 5), target: t, showSum: true, dots: true,
+    intro: 'Encén les cartes que sumin aquest número.' };
+}
+function genRead(i, used) {
+  const v = fresh(() => { let x; do { x = rnd(3, 254); } while (popcount(x) < 2 || popcount(x) > 5); return x; }, used);
+  const ws = W(8), bits = bitsOf(v, ws);
+  const off = ws.filter((w, k) => !bits[k]), on = ws.filter((w, k) => bits[k]);
+  return { type: 'choice', kind: 'read', ws, bits, weights: i < 4,
+    prompt: i < 4 ? 'Quin número formen els bits encesos?' : 'Ara sense pesos: quin número formen els bits encesos?',
+    options: opts(v, [reverseBits(v, 8), v + pick(off), v - pick(on), v + 10, v - 10], 4), answer: v,
+    explain: `${sumTxt(ws, bits)} = ${v}.`,
+    hint: i < 4 ? 'Suma només els pesos de les cartes enceses.'
+      : 'Els pesos, d’esquerra a dreta, són 128, 64, 32, 16, 8, 4, 2 i 1. Suma els de les cartes enceses.' };
+}
+function genRace(i, used) {
+  const t = fresh(() => rnd(1, 254), used);
+  return { type: 'set', ws: W(8), target: t, showSum: false, dots: false, timed: 40,
+    intro: 'Encén les cartes que sumin aquest número abans que s’acabi el temps.' };
+}
+function genHex(i, used) {
+  if (i >= 6) {
+    const v = fresh(() => rnd(17, 254), used);
+    return { type: 'hex', groups: [bitsOf(v >> 4, [8, 4, 2, 1]), bitsOf(v & 15, [8, 4, 2, 1])], answer: hex2(v),
+      intro: 'Escriu aquests 8 bits en hexadecimal: una xifra per cada grup de 4.',
+      explain: `${nibExplain(v >> 4)} i ${nibExplain(v & 15)}. Junts: ${hex2(v)}.`,
+      hint: `Fes cada grup per separat amb els pesos 8, 4, 2, 1. ${LETTERS}` };
+  }
+  const nib = used.nib || (used.nib = new Set());
+  const v = fresh(() => (Math.random() < 0.6 ? rnd(10, 15) : rnd(1, 9)), nib);
+  if (i % 2 === 0) {
+    return { type: 'hex', groups: [bitsOf(v, [8, 4, 2, 1])], answer: HEX[v],
+      intro: 'Escriu aquests 4 bits en hexadecimal.', explain: nibExplain(v) + '.',
+      hint: `Suma els pesos encesos. Si passes del 9: ${LETTERS}` };
+  }
+  return { type: 'set', ws: [8, 4, 2, 1], target: v, hexDigit: HEX[v], showSum: true, dots: false,
+    intro: 'Encén les cartes que facin aquesta xifra hexadecimal.' };
+}
+const COLORS = ['FF0066', '3399FF', '66CC33', 'FFCC00', '9933CC', '00CCCC', 'FF6633', '336699', 'CC3399', '99FF66', '0066CC', 'FF9933'];
+function colorCands(p) {
+  const a = hexVal(p[0]), b = hexVal(p[1]), v = a * 16 + b, c = [];
+  if (/^\d\d$/.test(p)) c.push(parseInt(p, 10));
+  c.push(a * 16, b * 16 + a, a + b, a * 10 + b, v + 16, v - 16);
+  return c;
+}
+function genColor(i, used) {
+  const hx = fresh(() => pick(COLORS), used);
+  const pairs = [hx.slice(0, 2), hx.slice(2, 4), hx.slice(4, 6)];
+  return { type: 'color', hex: hx, pairs, answers: pairs.map(p => parseInt(p, 16)),
+    options: pairs.map(p => opts(parseInt(p, 16), colorCands(p), 3)),
+    intro: 'Tria el valor decimal de cada parella. Si l’encertes, el teu color quedarà igual que l’objectiu.' };
+}
+const WORDS = ['BIT', 'CPU', 'RAM', 'Codi', 'Xarxa', 'Byte', 'Disc', 'Hexa', 'Joc', 'Pixel', 'Wifi', 'Bits'];
+function genAscii(i, used) {
+  const w = fresh(() => pick(WORDS), used);
+  return { type: 'ascii', word: w, bytes: [...w].map(ch => hex2(ch.charCodeAt(0))),
+    intro: 'Busca cada byte a la taula: la primera xifra és la fila i la segona, la columna.' };
+}
+function colorChannel() {
+  const hx = pick(COLORS), k = rnd(0, 2), p = hx.slice(k * 2, k * 2 + 2), v = parseInt(p, 16);
+  return { type: 'choice', kind: 'color', hex: hx, k, prompt: `Quant val en decimal la parella ${p} del color #${hx}?`,
+    options: opts(v, colorCands(p), 4), answer: v, explain: pairExplain(p) + '.',
+    hint: `Primera xifra × 16 + segona xifra. ${LETTERS}` };
+}
+function asciiOne() {
+  const ch = pick('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(''));
+  const code = hex2(ch.charCodeAt(0));
+  return { type: 'ascii', word: ch, bytes: [code], single: true, intro: `Quina lletra té el codi ${code}? Toca-la a la taula.` };
+}
+function bitsNeeded() {
+  const n = pick([20, 40, 70, 130, 300, 500, 1000]), b = n.toString(2).length;
+  return { type: 'choice', kind: 'text', prompt: `Quants bits calen, com a mínim, per guardar el número ${n}?`,
+    options: shuffle([b, b - 1, b + 1, b + 2]), answer: b,
+    explain: `Amb ${b - 1} bits arribes fins al ${2 ** (b - 1) - 1}: no hi cap. Amb ${b} bits arribes fins al ${2 ** b - 1}.`,
+    hint: 'Cada bit de més dobla el màxim: 1, 3, 7, 15, 31, 63, 127, 255, 511, 1023…' };
+}
+function combos() {
+  const n = pick([5, 6, 7, 10]), c = 2 ** n;
+  return { type: 'choice', kind: 'text', prompt: `Quantes combinacions diferents hi ha amb ${n} bits?`,
+    options: shuffle([c, c - 1, 2 * n, c / 2]), answer: c,
+    explain: `Cada bit dobla les combinacions: 2 × 2 × … (${n} vegades) = ${c}.`,
+    hint: 'Amb 1 bit n’hi ha 2, amb 2 bits 4, amb 3 bits 8… Cada bit de més, el doble.' };
+}
+function maxValue() {
+  const n = pick([5, 6, 7]), c = 2 ** n;
+  return { type: 'choice', kind: 'text', prompt: `Quin és el número més gran que es pot guardar amb ${n} bits?`,
+    options: shuffle([c - 1, c, c / 2, n * 10]), answer: c - 1,
+    explain: `Amb ${n} bits hi ha ${c} combinacions, del 0 al ${c - 1}: el 0 també compta.`,
+    hint: 'Posa tots els bits a 1 i suma els pesos.' };
+}
+function finalRounds(used) {
+  const qs = [
+    () => Object.assign(genRace(0, used), { timed: 0, intro: 'Encén les cartes que sumin aquest número.' }),
+    () => genRead(5, used),
+    () => genHex(0, used),
+    () => genHex(6, used),
+    () => genHex(1, used),
+    colorChannel, asciiOne, bitsNeeded, combos, maxValue
+  ];
+  return shuffle(qs).map(f => f());
+}
+
+const MISSIONS = [
+  { id: 1, title: 'Les cartes binàries', desc: 'Encén cartes fins que sumin el número. Del decimal al binari, amb 4 i 5 bits.', rounds: 6, gen: genCards },
+  { id: 2, title: 'Llegeix el byte', desc: 'Mira quins bits estan encesos i tria el número que formen.', rounds: 6, gen: genRead },
+  { id: 3, title: 'Contrarellotge', desc: 'Números del 0 al 255 en 40 segons, ara sense la suma d’ajuda.', rounds: 8, gen: genRace },
+  { id: 4, title: 'Hexa en 4 bits', desc: 'Cada grup de 4 bits és una xifra hexadecimal, del 0 a la F.', rounds: 8, gen: genHex },
+  { id: 5, title: 'Pinta el color', desc: 'Passa a decimal les parelles d’un color #RRGGBB.', rounds: 5, gen: genColor },
+  { id: 6, title: 'Missatge secret', desc: 'Troba cada byte a la taula ASCII i descobreix la paraula.', rounds: 4, gen: genAscii },
+  { id: 7, title: 'Repte final', desc: 'Deu preguntes barrejades. Quan l’acabes, tens el certificat.', rounds: 10, final: true }
+];
+
+// ---------------------------------------------------------------- estat
+let S = null;
+let play = 66;
+let timerId = null;
+const cur = () => S.rounds[S.i];
+const mult = () => 1 + 0.25 * Math.min(Math.max(S.streak - 1, 0), 4);
+
+function starIcon(on) {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="${on ? 'f' : 'e'}" d="M12 2.8l2.75 5.9 6.45.78-4.75 4.43 1.23 6.38L12 17.1l-5.68 3.19 1.23-6.38L2.8 9.48l6.45-.78z"/></svg>`;
+}
+const starsHtml = (n, label = true) => `<span class="stars"${label ? ` role="img" aria-label="${n} estrelles de 3"` : ''}>${[0, 1, 2].map(k => starIcon(k < n)).join('')}</span>`;
+
+function card(w, on, o) {
+  const dots = o.dots && w <= 16 ? `<span class="dots" aria-hidden="true">${'<i></i>'.repeat(w)}</span>` : '';
+  const act = o.act ? ` data-act="${o.act}" data-i="${o.i}" data-fk="${o.act}${o.i}"` : '';
+  const label = o.showW === false ? `Bit ${o.i + 1}` : `Carta ${w}`;
+  return `<div class="slot"><button type="button" class="card${on ? ' on' : ''}"${act}${o.ro ? ' disabled' : ''} aria-pressed="${on ? 'true' : 'false'}" aria-label="${label}, ${on ? 'encesa' : 'apagada'}">` +
+    (o.showW === false ? '' : `<span class="w">${w}</span>`) + dots + `</button><span class="bitlab">${on ? 1 : 0}</span></div>`;
+}
+
+// ---------------------------------------------------------------- navegació
+function go(name) {
+  if (location.hash === '#' + name) route();
+  else location.hash = name;
+}
+function route() {
+  const m = /^#missio-([1-7])$/.exec(location.hash);
+  if (m) startMission(+m[1]);
+  else renderHome();
+}
+window.addEventListener('hashchange', route);
+
+// ---------------------------------------------------------------- inici
+function playHtml() {
+  const ws = W(8), bits = bitsOf(play, ws);
+  return `<h2 id="ptitle">Toca els bits</h2><p class="muted">Encén i apaga els interruptors i mira què val el byte.</p>
+    <div class="cards n8">${ws.map((w, k) => card(w, bits[k], { act: 'play', i: k })).join('')}</div>
+    <div class="readout"><div><span>Decimal</span><b>${play}</b></div><div><span>Hexadecimal</span><b>${hex2(play)}</b></div>
+    <div><span>Lletra (ASCII)</span><b>${letterOf(play)}</b></div></div>`;
+}
+function renderHome() {
+  stopTimer();
+  S = null;
+  const total = MISSIONS.reduce((s, m) => s + (store.stars[m.id] || 0), 0);
+  const rows = MISSIONS.map(m => {
+    const st = store.stars[m.id] || 0, best = store.best[m.id];
+    return `<li${m.final ? ' class="final"' : ''}><button type="button" class="mrow${m.final ? ' final' : ''}" data-act="mission" data-id="${m.id}" data-fk="m${m.id}">
+      <span class="mnum">${m.id}</span><span class="mtxt"><b>${esc(m.title)}</b><span>${esc(m.desc)}</span></span>
+      <span class="mside">${starsHtml(st)}${best ? `<small>Rècord: ${best} punts</small>` : ''}</span></button></li>`;
+  }).join('');
+  app.innerHTML = `
+    <header class="hero"><h1>Bit a bit</h1>
+      <p>Practica el binari, l’hexadecimal, els colors i els codis de les lletres en set missions curtes. La darrera et dona el certificat.</p></header>
+    <section class="play" id="play" aria-labelledby="ptitle">${playHtml()}</section>
+    <div class="who"><label for="nom">El teu nom</label><input id="nom" type="text" maxlength="40" autocomplete="name" placeholder="Nom i cognom" value="${esc(store.name)}"></div>
+    <section aria-labelledby="mtitle"><div class="sect"><h2 id="mtitle">Missions</h2><span class="muted">${total} estrelles de 21</span></div>
+      <ol class="missions">${rows}</ol></section>
+    <div class="foot"><span>M0222 Sistemes Operatius Monolloc, 1r SMX. Institut Mare de Déu de la Mercè.</span>
+      <button type="button" class="linkbtn" data-act="reset">Canvia d’alumne (esborra el nom i les estrelles)</button></div>`;
+  document.getElementById('nom').addEventListener('input', e => { store.name = e.target.value.trim(); save(); });
+}
+function togglePlay(k) {
+  play ^= W(8)[k];
+  const box = document.getElementById('play');
+  box.innerHTML = playHtml();
+  const f = box.querySelector(`[data-fk="play${k}"]`);
+  if (f) f.focus();
+}
+function resetAll() {
+  if (!window.confirm('S’esborraran el nom, les estrelles i els rècords d’aquest ordinador. Vols continuar?')) return;
+  store.name = ''; store.best = {}; store.stars = {};
+  save();
+  renderHome();
+}
+
+// ---------------------------------------------------------------- partida
+function startMission(id) {
+  stopTimer();
+  const m = MISSIONS[id - 1];
+  const used = new Set(AVOID);
+  const rounds = m.final ? finalRounds(used) : Array.from({ length: m.rounds }, (_, i) => m.gen(i, used));
+  S = { id, m, rounds, i: 0, score: 0, streak: 0, firstTry: 0 };
+  renderGame();
+}
+function newRoundState(r) {
+  return { pen: 0, wrong: 0, hint: false, done: false, fb: null, picked: [], typed: '', idx: 0,
+    bits: r.ws ? r.ws.map(() => 0) : null, chosen: [null, null, null], checked: false, left: r.timed || 0,
+    hintRow: null, wrongCell: null, showSumNow: false };
+}
+function streakTxt() {
+  return S.streak >= 2 ? `Ratxa <b>${S.streak}</b> (×${dec(mult())})` : `Ratxa <b>${S.streak}</b>`;
+}
+function renderGame() {
+  stopTimer();
+  const r = cur();
+  S.rs = newRoundState(r);
+  app.innerHTML = `
+    <div class="bar"><button type="button" class="btn ghost sm" data-act="menu">Menú</button>
+      <div class="bar-title"><span class="mnum">${S.id}</span>${esc(S.m.title)}</div>
+      <div class="stats"><span>Pregunta <b>${S.i + 1}</b> de ${S.rounds.length}</span><span><b id="score">${S.score}</b> punts</span>
+      <span class="streak${S.streak >= 2 ? ' hot' : ''}" id="streak">${streakTxt()}</span></div></div>
+    <div class="progress" aria-hidden="true"><i style="width:${(S.i / S.rounds.length) * 100}%"></i></div>
+    <section class="round" id="round"></section>`;
+  draw();
+  if (r.timed) startTimer();
+  window.scrollTo(0, 0);
+}
+function updateStats() {
+  const sc = document.getElementById('score'), st = document.getElementById('streak');
+  if (sc) sc.textContent = S.score;
+  if (st) { st.innerHTML = streakTxt(); st.classList.toggle('hot', S.streak >= 2); }
+}
+
+function viewSet(r, rs) {
+  const tgt = r.hexDigit ? `<div class="target" aria-label="Xifra hexadecimal ${r.hexDigit}">${r.hexDigit}</div>` : `<div class="target">${r.target}</div>`;
+  const cards = r.ws.map((w, k) => card(w, rs.bits[k], { act: rs.done ? null : 'toggle', i: k, dots: r.dots, ro: rs.done })).join('');
+  const s = sumOf(r.ws, rs.bits);
+  let sum = '';
+  if (r.showSum || rs.showSumNow || rs.done) {
+    sum = `<p class="sum${s === r.target ? ' match' : ''}">${rs.bits.some(Boolean) ? `${sumTxt(r.ws, rs.bits)} = ${s}` : 'Encara no has encès cap carta.'}</p>`;
+  }
+  return `${tgt}<div class="cards n${r.ws.length}" id="shake">${cards}</div>${sum}
+    <p class="binline">Binari: <code>${grp4(rs.bits.join(''))}</code></p>`;
+}
+function viewChoice(r, rs) {
+  let show = '';
+  if (r.kind === 'read') {
+    show = `<div class="cards n8">${r.ws.map((w, k) => card(w, r.bits[k], { ro: true, i: k, showW: r.weights })).join('')}</div>
+      <p class="binline">Binari: <code>${grp4(r.bits.join(''))}</code></p>`;
+  } else if (r.kind === 'color') {
+    const p = [0, 1, 2].map(k => (k === r.k ? `<mark>${r.hex.slice(k * 2, k * 2 + 2)}</mark>` : r.hex.slice(k * 2, k * 2 + 2))).join('');
+    show = `<div class="chip-color"><span class="sw-big" style="background:#${r.hex}"></span><code>#${p}</code></div>`;
+  }
+  const opt = r.options.map((o, k) => {
+    let cls = '';
+    if (rs.picked.includes(o)) cls = o === r.answer ? ' ok' : ' bad';
+    if (rs.done && o === r.answer) cls = ' ok';
+    const dis = rs.done || rs.picked.includes(o);
+    return `<button type="button" class="opt${cls}" data-act="opt" data-v="${o}" data-fk="o${k}"${dis ? ' disabled' : ''}>${o}</button>`;
+  }).join('');
+  return `<p class="q">${esc(r.prompt)}</p>${show}<div class="opts" id="shake">${opt}</div>`;
+}
+function viewHex(r, rs) {
+  const groups = r.groups.map(g => `<div class="cards n4">${[8, 4, 2, 1].map((w, k) => card(w, g[k], { ro: true, i: k })).join('')}</div>`).join('');
+  const slots = Array.from({ length: r.answer.length }, (_, k) =>
+    `<span class="slotx${k === rs.typed.length && !rs.done ? ' cur' : ''}">${esc(rs.typed[k] || '')}</span>`).join('');
+  const keys = HEX.split('').map(ch => `<button type="button" class="key" data-act="key" data-ch="${ch}" data-fk="k${ch}"${rs.done ? ' disabled' : ''}>${ch}</button>`).join('') +
+    `<button type="button" class="key wide" data-act="del" data-fk="kdel"${rs.done ? ' disabled' : ''}>Esborra</button>`;
+  return `<div class="groups">${groups}</div><div class="slots" id="shake" aria-label="La teva resposta: ${esc(rs.typed) || 'buida'}">${slots}</div>
+    <div class="keypad">${keys}</div>`;
+}
+function viewColor(r, rs) {
+  const full = rs.chosen.every(v => v !== null);
+  const mine = `rgb(${rs.chosen.map(v => (v === null ? 0 : v)).join(',')})`;
+  const rows = r.pairs.map((p, k) => {
+    const o = r.options[k].map((v, j) => {
+      let cls = rs.chosen[k] === v ? ' sel' : '';
+      if (rs.checked && rs.chosen[k] === v) cls += v === r.answers[k] ? ' ok' : ' bad';
+      if (rs.done && v === r.answers[k]) cls = ' ok';
+      return `<button type="button" class="opt sm${cls}" data-act="copt" data-ch="${k}" data-v="${v}" data-fk="c${k}${j}"${rs.done ? ' disabled' : ''}>${v}</button>`;
+    }).join('');
+    return `<div class="crow"><span class="ch ch${k}" aria-hidden="true">${'RGB'[k]}</span><code class="pair">${p}</code><div class="copts">${o}</div></div>`;
+  }).join('');
+  return `<div class="colors"><figure><span class="sw-big" style="background:#${r.hex}"></span><figcaption>Objectiu <code>#${r.hex}</code></figcaption></figure>
+    <figure><span class="sw-big mine${full ? '' : ' part'}" style="background:${mine}"></span><figcaption>${full ? 'El teu color' : 'El teu color (falten parelles)'}</figcaption></figure></div>
+    <div class="crows" id="shake">${rows}</div>`;
+}
+function viewAscii(r, rs) {
+  const chips = r.bytes.map((b, k) => {
+    const shown = k < rs.idx || rs.done;
+    return `<span class="byte${k === rs.idx && !rs.done ? ' cur' : ''}${shown ? ' done' : ''}"><code>${b}</code><b>${shown ? esc(r.word[k]) : ''}</b></span>`;
+  }).join('');
+  const head = '<tr><th></th>' + HEX.split('').map(c => `<th scope="col">${c}</th>`).join('') + '</tr>';
+  const rows = [4, 5, 6, 7].map(row => `<tr><th scope="row">${row}</th>` + HEX.split('').map((c, ci) => {
+    const code = row * 16 + ci, k = hex2(code), ch = code === 127 ? '' : String.fromCharCode(code);
+    const cls = (rs.wrongCell === k ? ' bad' : '') + (rs.hintRow === row ? ' hint' : '');
+    return `<td><button type="button" class="ac${cls}" data-act="ac" data-code="${k}" data-fk="a${k}"${code === 127 || rs.done ? ' disabled' : ''} aria-label="Codi ${k}${ch ? ': ' + esc(ch) : ''}">${esc(ch)}</button></td>`;
+  }).join('') + '</tr>').join('');
+  return `<div class="bytes" id="shake">${chips}</div><div class="ascii-wrap"><table class="ascii"><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
+}
+function actionsHtml(r, rs) {
+  if (rs.done) return `<button type="button" class="btn" data-act="next" data-fk="next">${S.i + 1 < S.rounds.length ? 'Següent' : 'Veure el resultat'}</button>`;
+  let h = '';
+  if (r.type === 'set' || r.type === 'hex' || r.type === 'color') {
+    const ok = r.type === 'set' || (r.type === 'hex' && rs.typed.length === r.answer.length) || (r.type === 'color' && rs.chosen.every(v => v !== null));
+    h += `<button type="button" class="btn" data-act="check" data-fk="check"${ok ? '' : ' disabled'}>Comprova</button>`;
+  }
+  h += `<button type="button" class="btn ghost" data-act="hint" data-fk="hint"${rs.hint ? ' disabled' : ''}>Pista (−30 punts)</button>`;
+  if (rs.wrong >= 2 && r.type !== 'choice' && r.type !== 'ascii') h += `<button type="button" class="btn ghost" data-act="reveal" data-fk="reveal">Mostra la solució</button>`;
+  return h;
+}
+function draw(shake) {
+  const r = cur(), rs = S.rs, el = document.getElementById('round');
+  if (!el) return;
+  const ae = document.activeElement;
+  const fk = ae && ae.dataset ? ae.dataset.fk : null;
+  const views = { set: viewSet, choice: viewChoice, hex: viewHex, color: viewColor, ascii: viewAscii };
+  const timer = r.timed ? `<div class="timer" aria-hidden="true"><i id="tbar" style="width:${(rs.left / r.timed) * 100}%"></i></div>
+    <p class="tleft" id="tleft">${Math.ceil(rs.left)} s</p>` : '';
+  el.innerHTML = (r.intro ? `<p class="intro">${esc(r.intro)}</p>` : '') + views[r.type](r, rs) + timer +
+    `<div class="fb${rs.fb ? ' ' + rs.fb.cls : ''}" role="status" aria-live="polite">${rs.fb ? rs.fb.html : ''}</div>` +
+    `<div class="actions">${actionsHtml(r, rs)}</div>`;
+  if (rs.done) {
+    const n = el.querySelector('[data-act="next"]');
+    if (n) n.focus();
+  } else if (fk) {
+    const f = el.querySelector(`[data-fk="${fk}"]`);
+    if (f && !f.disabled) f.focus();
+  }
+  if (shake) {
+    const s = document.getElementById('shake');
+    if (s) { s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); }
+  }
+  updateStats();
+}
+
+// ---------------------------------------------------------------- accions
+function solutionText(r) {
+  if (r.type === 'set') {
+    const b = bitsOf(r.target, r.ws);
+    return `${sumTxt(r.ws, b)} = ${r.target}${r.hexDigit ? ` (${r.hexDigit} = ${r.target})` : ''}. En binari: ${grp4(bin(r.target, r.ws.length))}.`;
+  }
+  if (r.type === 'hex' || r.type === 'choice') return (r.type === 'choice' ? `La resposta era ${r.answer}. ` : '') + r.explain;
+  if (r.type === 'color') return r.pairs.map(pairExplain).join('; ') + '.';
+  return r.single ? `El ${r.bytes[0]} és la «${r.word}».` : `La paraula era «${r.word}».`;
+}
+function win(explain) {
+  const r = cur(), rs = S.rs;
+  stopTimer();
+  const first = rs.pen === 0;
+  if (first) { S.streak++; S.firstTry++; } else S.streak = 0;
+  const bonus = r.timed ? Math.round(rs.left * 2) : 0;
+  const pts = Math.round(Math.max(20, 100 - rs.pen) * (first ? mult() : 1)) + bonus;
+  S.score += pts;
+  rs.done = true;
+  const title = first ? pick(['Correcte.', 'Molt bé.', 'Exacte.']) : 'Ara sí.';
+  rs.fb = { cls: 'ok', html: `<strong>${title}</strong> ${esc(explain)} <span class="pts">+${pts} punts${bonus ? ` (${bonus} pel temps)` : ''}</span>` };
+  draw();
+}
+function miss(msg, pen) {
+  const rs = S.rs;
+  rs.wrong++;
+  rs.pen += pen;
+  rs.fb = { cls: 'bad', html: `<strong>Encara no.</strong> ${esc(msg)}` };
+  draw(true);
+}
+function reveal(title) {
+  const r = cur(), rs = S.rs;
+  stopTimer();
+  S.streak = 0;
+  rs.done = true;
+  if (r.type === 'set') rs.bits = bitsOf(r.target, r.ws);
+  if (r.type === 'hex') rs.typed = r.answer;
+  if (r.type === 'color') rs.chosen = r.answers.slice();
+  if (r.type === 'ascii') rs.idx = r.bytes.length;
+  rs.fb = { cls: 'info', html: `<strong>${esc(title)}</strong> ${esc(solutionText(r))} <span class="pts">+0 punts</span>` };
+  draw();
+}
+function check() {
+  const r = cur(), rs = S.rs;
+  if (rs.done) return;
+  if (r.type === 'set') {
+    const s = sumOf(r.ws, rs.bits);
+    if (s === r.target) {
+      return win(`${sumTxt(r.ws, rs.bits)} = ${s}${r.hexDigit ? ` → ${r.hexDigit}` : ''}. En binari: ${grp4(rs.bits.join(''))}.`);
+    }
+    if (r.hexDigit) return miss(`Portes ${s}${s >= 10 ? ` (en hexadecimal, ${HEX[s]})` : ''}. Busques la ${r.hexDigit}.`, 20);
+    return miss(s < r.target ? `Portes ${s}. Et falten ${r.target - s}.` : `Portes ${s}. Te’n passes ${s - r.target}.`, 20);
+  }
+  if (r.type === 'hex') {
+    if (rs.typed.length < r.answer.length) return;
+    if (rs.typed === r.answer) return win(r.explain);
+    return miss(`${rs.typed} no és correcte. Revisa cada grup amb els pesos 8, 4, 2, 1.`, 20);
+  }
+  if (r.type === 'color') {
+    if (rs.chosen.some(v => v === null)) return;
+    const bad = rs.chosen.filter((v, k) => v !== r.answers[k]).length;
+    if (!bad) return win(r.pairs.map(pairExplain).join('; ') + '.');
+    rs.checked = true;
+    return miss(bad === 1 ? 'Hi ha una parella malament: la tens marcada en vermell.' : `Hi ha ${bad} parelles malament: les tens marcades en vermell.`, 20);
+  }
+}
+function choose(v) {
+  const r = cur(), rs = S.rs;
+  if (rs.done || rs.picked.includes(v)) return;
+  rs.picked.push(v);
+  if (v === r.answer) return win(r.explain);
+  rs.wrong++;
+  rs.pen += 40;
+  if (rs.wrong >= 2) return reveal('Tampoc.');
+  rs.fb = { cls: 'bad', html: `<strong>No és ${esc(v)}.</strong> ${esc(r.hint)} Torna-ho a provar.` };
+  draw(true);
+}
+function asciiPick(code) {
+  const r = cur(), rs = S.rs;
+  if (rs.done) return;
+  const want = r.bytes[rs.idx];
+  if (code === want) {
+    rs.idx++;
+    rs.wrongCell = null;
+    rs.hintRow = null;
+    if (rs.idx === r.bytes.length) {
+      return win(r.single ? `El ${want} és la «${r.word}»: fila ${want[0]}, columna ${want[1]}.` : `La paraula és «${r.word}».`);
+    }
+    rs.fb = { cls: 'info', html: `El ${want} és la «${esc(r.word[rs.idx - 1])}». Ara busca el ${r.bytes[rs.idx]}.` };
+    return draw();
+  }
+  rs.wrong++;
+  rs.pen += 10;
+  rs.wrongCell = code;
+  rs.fb = { cls: 'bad', html: `<strong>Aquesta és la ${code}</strong> (fila ${code[0]}, columna ${code[1]}). Busques el ${want}: fila ${want[0]}, columna ${want[1]}.` };
+  draw(true);
+}
+function hint() {
+  const r = cur(), rs = S.rs;
+  if (rs.done || rs.hint) return;
+  rs.hint = true;
+  rs.pen += 30;
+  let msg;
+  if (r.type === 'set') {
+    const sol = bitsOf(r.target, r.ws);
+    const k = sol.findIndex((b, j) => b !== rs.bits[j]);
+    const pre = r.hexDigit ? `${r.hexDigit} = ${r.target}. ` : '';
+    msg = pre + (k < 0 ? 'Ja ho tens: prem Comprova.' : sol[k] ? `El ${r.ws[k]} hi cap: encén-lo.` : `El ${r.ws[k]} no hi cap: deixa’l apagat.`);
+    if (!r.showSum) msg += ' A partir d’ara veus la suma.';
+    rs.showSumNow = true;
+  } else if (r.type === 'ascii') {
+    const want = r.bytes[rs.idx];
+    rs.hintRow = +want[0];
+    msg = `El ${want} és a la fila ${want[0]}, que t’he marcada. Ara busca la columna ${want[1]}.`;
+  } else if (r.type === 'color') {
+    msg = `Primera xifra × 16 + segona xifra. ${LETTERS}`;
+  } else {
+    msg = r.hint;
+  }
+  rs.fb = { cls: 'info', html: `<strong>Pista.</strong> ${esc(msg)}` };
+  draw();
+}
+function next() {
+  if (S.i + 1 < S.rounds.length) { S.i++; renderGame(); } else renderEnd();
+}
+function startTimer() {
+  stopTimer();
+  const rs = S.rs, total = cur().timed;
+  const t0 = Date.now();
+  timerId = setInterval(() => {
+    if (!S || S.rs !== rs || rs.done) { stopTimer(); return; }
+    rs.left = Math.max(0, total - (Date.now() - t0) / 1000);
+    const bar = document.getElementById('tbar'), lab = document.getElementById('tleft');
+    if (bar) bar.style.width = (rs.left / total) * 100 + '%';
+    if (lab) lab.textContent = Math.ceil(rs.left) + ' s';
+    if (rs.left <= 0) reveal('S’ha acabat el temps.');
+  }, 200);
+}
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+// ---------------------------------------------------------------- resultats
+function renderEnd() {
+  stopTimer();
+  S.ended = true;
+  const n = S.rounds.length, acc = S.firstTry / n;
+  const stars = acc >= 0.85 ? 3 : acc >= 0.6 ? 2 : 1;
+  const prev = store.best[S.id] || 0;
+  store.best[S.id] = Math.max(prev, S.score);
+  store.stars[S.id] = Math.max(store.stars[S.id] || 0, stars);
+  save();
+  if (S.m.final) return renderCert(stars);
+  const tip = stars === 3 ? 'Perfecte. Ja pots passar a la missió següent.'
+    : stars === 2 ? 'Bé. Si la repeteixes, prova de fer-la sense pistes.'
+    : 'Repeteix-la amb la teoria al costat: cada error et diu què has de mirar.';
+  app.innerHTML = `
+    <div class="bar"><button type="button" class="btn ghost sm" data-act="menu">Menú</button>
+      <div class="bar-title"><span class="mnum">${S.id}</span>${esc(S.m.title)}</div></div>
+    <section class="end">
+      <div class="bigstars">${starsHtml(stars)}</div>
+      <h2>Missió completada</h2>
+      <p class="score">${S.score} punts</p>
+      <p>Encerts a la primera: <b>${S.firstTry} de ${n}</b>.${prev && S.score > prev ? ' Nou rècord.' : ''}</p>
+      <p class="muted">${tip}</p>
+      <div class="actions">${S.id < MISSIONS.length ? `<button type="button" class="btn" data-act="mission" data-id="${S.id + 1}">Missió següent</button>` : ''}
+        <button type="button" class="btn ghost" data-act="retry">Torna-ho a provar</button>
+        <button type="button" class="btn ghost" data-act="menu">Menú</button></div>
+    </section>`;
+  const b = app.querySelector('.end .btn');
+  if (b) b.focus();
+}
+function renderCert(stars) {
+  const d = new Date();
+  const when = d.toLocaleDateString('ca-ES') + ', ' + d.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
+  app.innerHTML = `
+    <section class="cert">
+      <p class="cert-k">Bit a bit</p>
+      <h2>Certificat del repte final</h2>
+      <p class="cert-name" id="certname">${esc(store.name) || 'Sense nom'}</p>
+      ${store.name ? '' : '<label class="cert-in">Escriu el teu nom <input id="nom2" type="text" maxlength="40" placeholder="Nom i cognom"></label>'}
+      <p>ha completat el repte final de codificació.</p>
+      <div class="cert-grid"><div><span>Punts</span><b>${S.score}</b></div>
+        <div><span>Encerts a la primera</span><b>${S.firstTry} de ${S.rounds.length}</b></div>
+        <div><span>Estrelles</span><b>${starsHtml(stars)}</b></div></div>
+      <p class="muted">${when}. M0222 Sistemes Operatius Monolloc, Institut Mare de Déu de la Mercè.</p>
+    </section>
+    <p class="muted center">Fes una captura d’aquesta pantalla si el professor te la demana.</p>
+    <div class="actions center"><button type="button" class="btn ghost" data-act="retry">Torna-ho a provar</button>
+      <button type="button" class="btn" data-act="menu">Menú</button></div>`;
+  const in2 = document.getElementById('nom2');
+  if (in2) {
+    in2.addEventListener('input', () => {
+      store.name = in2.value.trim();
+      save();
+      document.getElementById('certname').textContent = store.name || 'Sense nom';
+    });
+  }
+}
+
+// ---------------------------------------------------------------- esdeveniments
+app.addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]');
+  if (!b || b.disabled) return;
+  const a = b.dataset.act;
+  if (a === 'mission') return go('missio-' + b.dataset.id);
+  if (a === 'menu') return go('inici');
+  if (a === 'reset') return resetAll();
+  if (a === 'play') return togglePlay(+b.dataset.i);
+  if (!S) return;
+  const rs = S.rs;
+  switch (a) {
+    case 'toggle':
+      if (rs.done) return;
+      rs.bits[+b.dataset.i] ^= 1;
+      if (rs.fb && rs.fb.cls === 'bad') rs.fb = null;
+      return draw();
+    case 'opt': return choose(+b.dataset.v);
+    case 'key':
+      if (rs.typed.length < cur().answer.length) { rs.typed += b.dataset.ch; rs.fb = rs.fb && rs.fb.cls === 'bad' ? null : rs.fb; draw(); }
+      return;
+    case 'del': rs.typed = rs.typed.slice(0, -1); return draw();
+    case 'copt': rs.chosen[+b.dataset.ch] = +b.dataset.v; rs.checked = false; return draw();
+    case 'ac': return asciiPick(b.dataset.code);
+    case 'check': return check();
+    case 'hint': return hint();
+    case 'reveal': return reveal('Solució.');
+    case 'next': return next();
+    case 'retry': return startMission(S.id);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (!S || !S.rs || S.ended || (e.target && e.target.tagName === 'INPUT')) return;
+  const r = cur(), rs = S.rs;
+  if (e.key === 'Enter') {
+    if (e.target && e.target.tagName === 'BUTTON') return;
+    if (rs.done) { e.preventDefault(); next(); } else if (r.type !== 'choice' && r.type !== 'ascii') { e.preventDefault(); check(); }
+    return;
+  }
+  if (r.type === 'hex' && !rs.done) {
+    const k = e.key.toUpperCase();
+    if (k.length === 1 && HEX.includes(k) && rs.typed.length < r.answer.length) { rs.typed += k; e.preventDefault(); draw(); }
+    else if (e.key === 'Backspace') { rs.typed = rs.typed.slice(0, -1); e.preventDefault(); draw(); }
+  }
+});
+
+route();
+})();
+</script>
+</body>
+</html>
